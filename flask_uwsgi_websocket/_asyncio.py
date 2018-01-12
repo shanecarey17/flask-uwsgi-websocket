@@ -122,11 +122,11 @@ class AsyncioWebSocketMiddleware(WebSocketMiddleware):
         client = self.client(environ, uwsgi.connection_fd(), self.websocket.timeout, greenlet.getcurrent())
 
         assert asyncio.iscoroutinefunction(handler)
-        asyncio.Task(asyncio.coroutine(handler)(client, **args))
+        hf = asyncio.Task(asyncio.coroutine(handler)(client, **args))
         f = GreenFuture()
         asyncio.Task(client._send_ready(f))
         try:
-            while True:
+            while not hf.done():
                 f.greenlet.parent.switch()
                 if f.done():
                     msg = f.result()
